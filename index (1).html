@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Fajr"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<title>Fajr · فجر</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --gold: #c4a36b;
+    --gold-dim: rgba(196,163,107,0.15);
+    --gold-border: rgba(196,163,107,0.25);
+    --green: rgba(100,160,100,0.9);
+    --green-dim: rgba(160,195,160,0.08);
+    --green-border: rgba(160,195,160,0.2);
+    --bg: #0a0a0a;
+    --nav-bg: rgba(10,10,10,0.85);
+    --surface: rgba(255,255,255,0.025);
+    --border: rgba(255,255,255,0.06);
+    --text: #f0ede6;
+    --text-dim: rgba(240,237,230,0.45);
+    --text-faint: rgba(240,237,230,0.25);
+    --glow: rgba(196,163,107,0.06);
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --sans: 'Jost', sans-serif;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --gold: #9a7a42;
+      --gold-dim: rgba(154,122,66,0.1);
+      --gold-border: rgba(154,122,66,0.3);
+      --green: rgba(60,120,60,0.9);
+      --green-dim: rgba(100,160,100,0.08);
+      --green-border: rgba(100,160,100,0.25);
+      --bg: #f7f4ef;
+      --nav-bg: rgba(247,244,239,0.9);
+      --surface: rgba(0,0,0,0.03);
+      --border: rgba(0,0,0,0.08);
+      --text: #1a1712;
+      --text-dim: rgba(26,23,18,0.55);
+      --text-faint: rgba(26,23,18,0.35);
+      --glow: rgba(196,163,107,0.08);
+    }
+  }
+
+  html, body {
+    height: 100%; background: var(--bg);
+    color: var(--text); font-family: var(--sans);
+    overflow-x: hidden; -webkit-font-smoothing: antialiased;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.5;
+  }
+
+  /* Ambient glow */
+  body::after {
+    content: ''; position: fixed; top: -20vh; left: 50%; transform: translateX(-50%);
+    width: 80vw; height: 60vh; border-radius: 50%; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse, var(--glow) 0%, transparent 65%);
+  }
+
+  .app { position: relative; z-index: 1; min-height: 100vh; }
+
+  /* NAV */
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; justify-content: space-around; align-items: center;
+    padding: 16px 20px 12px;
+    background: var(--nav-bg);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-btn {
+    font-family: var(--sans); font-size: 10px; font-weight: 400;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--text-faint); background: none; border: none;
+    cursor: pointer; padding: 6px 12px; border-radius: 20px;
+    transition: all 0.3s;
+  }
+  .nav-btn.active { color: var(--gold); background: var(--gold-dim); }
+
+  /* SCREENS */
+  .screen { display: none; padding: 28px 20px 100px; max-width: 480px; margin: 0 auto; animation: fadeUp 0.5s ease forwards; }
+  .screen.visible { display: block; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+  /* QUOTE */
+  .quote-block { text-align: center; padding: 32px 16px 28px; }
+  .quote-text { font-family: var(--serif); font-size: 17px; font-style: italic; font-weight: 300; line-height: 1.75; color: var(--text-dim); letter-spacing: 0.02em; }
+  .quote-rule { width: 36px; height: 1px; background: var(--gold); margin: 18px auto 0; opacity: 0.6; }
+
+  /* GREETING */
+  .greeting { font-family: var(--serif); font-size: 32px; font-weight: 300; letter-spacing: -0.01em; line-height: 1.15; margin-bottom: 6px; }
+  .greeting span { color: var(--gold); }
+  .subline { font-size: 11px; color: var(--text-faint); letter-spacing: 0.1em; margin-bottom: 32px; font-weight: 300; }
+
+  /* MODE CARDS */
+  .mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 32px; }
+  .mode-card {
+    padding: 18px 14px; border-radius: 14px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface);
+    text-align: left; font-family: var(--sans); color: var(--text);
+    transition: all 0.3s; -webkit-user-select: none; user-select: none;
+  }
+  .mode-card:active { transform: scale(0.97); }
+  .mode-card.full.selected { background: var(--gold-dim); border-color: var(--gold-border); }
+  .mode-card.min.selected { background: var(--green-dim); border-color: var(--green-border); }
+  .mode-card-title { font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+  .mode-card.full.selected .mode-card-title { color: var(--gold); }
+  .mode-card.min.selected .mode-card-title { color: var(--green); }
+  .mode-card-sub { font-size: 11px; color: var(--text-faint); font-weight: 300; }
+
+  /* SECTION LABEL */
+  .section-label { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(196,163,107,0.55); margin-bottom: 12px; font-weight: 400; }
+
+  /* ITEMS */
+  .item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 14px; margin-bottom: 7px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; cursor: pointer;
+    transition: all 0.25s; -webkit-user-select: none; user-select: none;
+  }
+  .item:active { transform: scale(0.98); }
+  .item.done { background: rgba(196,163,107,0.05); border-color: var(--gold-border); }
+  .item.done-green { background: var(--green-dim); border-color: var(--green-border); }
+  .check {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+    border: 1.5px solid rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; transition: all 0.25s; background: transparent;
+  }
+  .item.done .check { background: var(--gold); border-color: var(--gold); color: #0a0a0a; }
+  .item.done-green .check { background: var(--green); border-color: var(--green); color: #0a0a0a; }
+  .item-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+  .item-body { flex: 1; min-width: 0; }
+  .item-task { font-size: 14px; font-weight: 400; color: var(--text); letter-spacing: 0.01em; transition: all 0.25s; }
+  .item.done .item-task, .item.done-green .item-task { color: var(--text-faint); text-decoration: line-through; }
+  .item-note { font-size: 11px; color: var(--text-faint); margin-top: 3px; font-weight: 300; }
+  .item-time { font-size: 10px; color: rgba(196,163,107,0.5); flex-shrink: 0; margin-top: 3px; letter-spacing: 0.05em; font-variant-numeric: tabular-nums; }
+
+  /* PROGRESS */
+  .progress-wrap { margin: 24px 0 20px; }
+  .progress-bar { height: 2px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+  .progress-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.6s cubic-bezier(0.16,1,0.3,1); }
+  .progress-text { font-size: 10px; color: var(--text-faint); letter-spacing: 0.1em; font-weight: 300; }
+
+  /* COMPLETE */
+  .complete-msg {
+    text-align: center; padding: 22px 20px;
+    background: rgba(196,163,107,0.05); border: 1px solid var(--gold-border);
+    border-radius: 14px; margin-top: 12px;
+  }
+  .complete-msg p { font-family: var(--serif); font-size: 16px; font-style: italic; font-weight: 300; color: rgba(240,237,230,0.65); line-height: 1.7; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+  /* RETURN BANNER */
+  .return-banner {
+    padding: 16px 18px; margin-bottom: 20px;
+    background: var(--green-dim); border: 1px solid var(--green-border);
+    border-radius: 12px; font-family: var(--serif); font-style: italic;
+    font-size: 14px; font-weight: 300; color: rgba(240,237,230,0.55); line-height: 1.6;
+  }
+
+  /* STREAK CARDS */
+  .streak-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 28px; }
+  .streak-card { padding: 18px 10px; border-radius: 12px; text-align: center; background: var(--surface); border: 1px solid var(--border); }
+  .streak-num { font-family: var(--serif); font-size: 38px; font-weight: 300; line-height: 1; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+  .streak-lbl { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-faint); font-weight: 300; }
+
+  /* CALENDAR */
+  .cal-grid { display: grid; grid-template-columns: repeat(10,1fr); gap: 3px; margin-top: 12px; }
+  .cal-day {
+    aspect-ratio: 1; border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 7px; color: var(--text-faint); font-weight: 300;
+  }
+  .cal-day.full-day { background: var(--gold); color: #0a0a0a; }
+  .cal-day.partial { background: rgba(196,163,107,0.3); }
+  .cal-day.missed { background: rgba(255,255,255,0.04); }
+  .cal-legend { display: flex; gap: 14px; margin-top: 10px; }
+  .cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text-faint); letter-spacing: 0.08em; font-weight: 300; }
+  .cal-legend-dot { width: 9px; height: 9px; border-radius: 2px; }
+
+  /* ALARMS SECTION */
+  .alarm-card {
+    padding: 16px 16px; margin-bottom: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .alarm-time { font-size: 22px; font-family: var(--serif); font-weight: 300; color: var(--gold); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+  .alarm-msg { font-size: 13px; color: var(--text-dim); line-height: 1.5; font-family: var(--serif); font-style: italic; font-weight: 300; }
+  .alarm-label { font-size: 9px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 6px; font-weight: 300; }
+
+  /* CONNECTION RITUAL */
+  .connection-card {
+    padding: 20px 18px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .connection-type { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 8px; font-weight: 400; }
+  .connection-type.family { color: var(--gold); }
+  .connection-type.relation { color: var(--green); }
+  .connection-prompt { font-family: var(--serif); font-size: 15px; font-style: italic; font-weight: 300; color: rgba(240,237,230,0.6); line-height: 1.6; margin-bottom: 14px; }
+  .connection-check-row { display: flex; gap: 8px; }
+  .connection-btn {
+    flex: 1; padding: 10px 8px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent;
+    font-family: var(--sans); font-size: 11px; color: var(--text-dim);
+    letter-spacing: 0.08em; text-transform: uppercase; font-weight: 400;
+    transition: all 0.25s; -webkit-user-select: none; user-select: none;
+  }
+  .connection-btn:active { transform: scale(0.97); }
+  .connection-btn.done-btn { background: var(--gold-dim); border-color: var(--gold-border); color: var(--gold); }
+  .connection-btn.done-btn.green { background: var(--green-dim); border-color: var(--green-border); color: var(--green); }
+
+  /* BODY NOURISHMENT */
+  .nourish-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 14px; margin-bottom: 7px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; cursor: pointer;
+    transition: all 0.25s; -webkit-user-select: none; user-select: none;
+  }
+  .nourish-item:active { transform: scale(0.98); }
+  .nourish-item.done { background: rgba(160,195,160,0.05); border-color: var(--green-border); }
+  .nourish-item.done .check { background: var(--green); border-color: var(--green); color: #0a0a0a; }
+  .nourish-item.done .item-task { color: var(--text-faint); text-decoration: line-through; }
+
+  /* TRAVEL */
+  .travel-item {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 14px; margin: 0 6px 8px 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 24px; cursor: pointer; font-size: 13px;
+    color: var(--text-dim); transition: all 0.25s;
+    -webkit-user-select: none; user-select: none;
+  }
+  .travel-item:active { transform: scale(0.97); }
+  .travel-item.done { background: var(--gold-dim); border-color: var(--gold-border); color: var(--gold); }
+
+  /* SAVE INSTRUCTIONS */
+  .save-box {
+    padding: 20px 18px; border-radius: 14px;
+    background: rgba(196,163,107,0.04); border: 1px solid var(--gold-border);
+    margin-bottom: 24px;
+  }
+  .save-box h3 { font-family: var(--serif); font-size: 18px; font-weight: 300; margin-bottom: 12px; color: var(--gold); }
+  .save-step { display: flex; gap: 10px; margin-bottom: 10px; font-size: 13px; color: var(--text-dim); line-height: 1.5; font-weight: 300; }
+  .save-step-num { font-family: var(--serif); font-size: 16px; color: var(--gold); flex-shrink: 0; font-weight: 300; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 0; }
+
+  /* TIMER */
+  #floating-timer {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    width: calc(100% - 40px); max-width: 440px;
+    background: rgba(10,10,10,0.95); border: 1px solid var(--gold-border);
+    border-radius: 16px; padding: 18px 20px; z-index: 999;
+    backdrop-filter: blur(20px); display: none;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  }
+  @media (prefers-color-scheme: light) {
+    #floating-timer { background: rgba(247,244,239,0.97); box-shadow: 0 8px 40px rgba(0,0,0,0.15); }
+  }
+  .item-timing { border-color: var(--gold-border) !important; background: var(--gold-dim) !important; }
+  .item-timer-bar { height: 2px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .item-timer-fill { height: 100%; background: var(--gold); border-radius: 2px; width: 0%; transition: width 1s linear; }
+  .item-timer-txt { font-size: 11px; color: var(--gold); font-variant-numeric: tabular-nums; letter-spacing: 0.05em; margin-top: 2px; }
+  #timer-done-msg {
+    position: fixed; inset: 0; background: rgba(10,10,10,0.92);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; z-index: 1000; text-align: center;
+    color: var(--text); padding: 40px; cursor: pointer;
+    backdrop-filter: blur(10px);
+  }
+
+  /* WIN BOX */
+  .win-box {
+    padding: 18px 16px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .win-entry {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; margin-bottom: 7px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .win-sticker { font-size: 20px; flex-shrink: 0; }
+  .win-text { font-family: var(--serif); font-size: 14px; font-style: italic; color: var(--text-dim); line-height: 1.6; flex: 1; }
+  .win-date { font-size: 9px; color: var(--text-faint); letter-spacing: 0.08em; margin-top: 4px; }
+
+  /* IDENTITY */
+  .identity-card {
+    padding: 16px 16px; margin-bottom: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .identity-card.gold-card { background: var(--gold-dim); border-color: var(--gold-border); }
+  .identity-card.rumi-card { background: rgba(120,100,160,0.06); border-color: rgba(180,160,220,0.15); }
+  @media (prefers-color-scheme: light) {
+    .identity-card.rumi-card { background: rgba(120,100,160,0.07); border-color: rgba(120,100,160,0.2); }
+    .identity-card.rumi-card p, .identity-card.rumi-card div { color: rgba(26,23,18,0.6) !important; }
+    .identity-card { background: rgba(0,0,0,0.03); }
+    .identity-card.gold-card { background: rgba(154,122,66,0.08); }
+    .return-banner { background: rgba(100,160,100,0.08); border-color: rgba(100,160,100,0.2); color: rgba(26,23,18,0.55); }
+    .complete-msg { background: rgba(154,122,66,0.07); }
+    .alarm-card { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.08); }
+    .connection-card { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.08); }
+    .win-box { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.08); }
+    .save-box { background: rgba(154,122,66,0.06); }
+  }
+  .identity-row { display: flex; gap: 14px; align-items: flex-start; }
+  .identity-icon { font-size: 22px; flex-shrink: 0; min-width: 28px; text-align: center; font-family: var(--serif); font-weight: 300; color: var(--gold); margin-top: 2px; }
+  .identity-title { font-size: 13px; font-weight: 500; letter-spacing: 0.04em; margin-bottom: 4px; color: var(--text); }
+  .identity-sub { font-size: 12px; color: var(--text-faint); line-height: 1.6; font-weight: 300; }
+  .forget-wheel { text-align: center; margin: 8px 0 12px; }
+  .forget-btn {
+    padding: 18px 28px; border-radius: 50%; width: 160px; height: 160px;
+    background: var(--gold-dim); border: 1px solid var(--gold-border);
+    color: var(--gold); font-family: var(--serif); font-style: italic;
+    font-size: 14px; line-height: 1.6; cursor: pointer;
+    transition: all 0.3s; -webkit-user-select: none; user-select: none;
+  }
+  .forget-btn:active { transform: scale(0.95); }
+  .reminder-msg {
+    text-align: center; padding: 22px 20px;
+    background: var(--gold-dim); border: 1px solid var(--gold-border);
+    border-radius: 14px; margin-top: 12px;
+    font-family: var(--serif); font-size: 18px; font-style: italic;
+    font-weight: 300; color: var(--text); line-height: 1.7;
+    animation: fadeUp 0.5s ease forwards;
+  }
+  .tags-row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .tag {
+    padding: 6px 12px; border-radius: 20px; font-size: 11px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-faint); font-weight: 300; letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showScreen('home')">Morning</button>
+    <button class="nav-btn" onclick="showScreen('today')">Today</button>
+    <button class="nav-btn" onclick="showScreen('connect')">Connect</button>
+    <button class="nav-btn" onclick="showScreen('journey')">Journey</button>
+    <button class="nav-btn" onclick="showScreen('identity')">I Am</button>
+  </nav>
+
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen visible">
+    <div class="quote-block">
+      <p class="quote-text" id="daily-quote"></p>
+      <div class="quote-rule"></div>
+    </div>
+
+    <h1 class="greeting" id="main-greeting">Good morning,<br/><span>Dania.</span></h1>
+    <p class="subline" id="home-subline"></p>
+
+    <div id="return-banner" class="return-banner" style="display:none"></div>
+
+    <!-- MOOD CHECK-IN -->
+    <p class="section-label" style="margin-bottom:10px">How are you today?</p>
+    <div id="mood-row" style="display:flex;gap:8px;margin-bottom:28px"></div>
+
+    <!-- GRATITUDE -->
+    <p class="section-label">One thing I am grateful for</p>
+    <div style="margin-bottom:28px">
+      <textarea id="gratitude-input" placeholder="Today I am grateful for..." onblur="saveGratitude()" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text);resize:none;height:64px;outline:none;line-height:1.6;"></textarea>
+    </div>
+
+    <!-- SK INTENTION -->
+    <p class="section-label">Today at work I will</p>
+    <div style="margin-bottom:16px">
+      <textarea id="intention-input" placeholder="One clear intention for today..." onblur="saveIntention()" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-family:var(--serif);font-size:14px;color:var(--text);resize:none;height:64px;outline:none;line-height:1.6;"></textarea>
+    </div>
+
+    <!-- DECISION -->
+    <p class="section-label">One decision I will not delay today</p>
+    <div style="margin-bottom:28px">
+      <textarea id="decision-input" placeholder="What have I been holding back on?" onblur="saveDecision()" style="width:100%;background:var(--surface);border:1px solid rgba(196,163,107,0.2);border-radius:10px;padding:12px 14px;font-family:var(--serif);font-size:14px;color:var(--text);resize:none;height:64px;outline:none;line-height:1.6;"></textarea>
+    </div>
+
+    <p class="section-label" style="margin-bottom:10px">How does today feel?</p>
+    <div class="mode-row">
+      <div class="mode-card full" id="card-full" onclick="selectMode('full')">
+        <div class="mode-card-title">Full Morning</div>
+        <div class="mode-card-sub">11 steps · ~3 hrs</div>
+      </div>
+      <div class="mode-card min" id="card-min" onclick="selectMode('min')">
+        <div class="mode-card-title">Minimum</div>
+        <div class="mode-card-sub">5 things · ~75 min</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- WATER TRACKER -->
+    <p class="section-label">Water · 8 glasses today</p>
+    <div id="water-tracker" style="margin-bottom:28px"></div>
+
+    <p class="section-label">Body nourishment · daily</p>
+    <div id="nourish-list"></div>
+
+    <div class="divider"></div>
+
+    <p class="section-label">Evening ritual</p>
+    <div id="evening-list"></div>
+
+    <div class="divider"></div>
+  </div>
+
+  <!-- TODAY SCREEN -->
+  <div id="screen-today" class="screen">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px">
+      <p class="section-label" style="margin:0" id="today-label">Choose a mode to begin</p>
+      <button onclick="switchMode()" style="font-family:var(--sans);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint);background:none;border:none;cursor:pointer;padding:0;">Switch</button>
+    </div>
+
+    <div id="no-mode-msg" style="text-align:center;padding:40px 20px;color:var(--text-faint);font-family:var(--serif);font-style:italic;font-size:15px;line-height:1.7;">
+      Go to Morning tab<br/>and choose your day first.
+    </div>
+
+    <div id="min-banner" class="return-banner" style="display:none">
+      Five things. That is all today needs to be. 🌿
+    </div>
+
+    <div id="routine-list"></div>
+
+    <div class="progress-wrap" id="progress-wrap" style="display:none">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <p class="progress-text" id="progress-text"></p>
+    </div>
+
+    <div id="complete-msg" class="complete-msg" style="display:none">
+      <p id="complete-text"></p>
+    </div>
+
+    <div class="divider" id="travel-divider" style="display:none"></div>
+    <p class="section-label" id="travel-label" style="display:none">Travel time · use your commute</p>
+    <div id="travel-list"></div>
+  </div>
+
+  <!-- CONNECT SCREEN -->
+  <div id="screen-connect" class="screen">
+    <h2 style="font-family:var(--serif);font-size:28px;font-weight:300;margin-bottom:6px">Stay human,<br/>Dania.</h2>
+    <p class="subline" style="margin-bottom:28px">One family. One relationship. Every day.</p>
+
+    <div id="connect-family-card" class="connection-card"></div>
+    <div id="connect-relation-card" class="connection-card"></div>
+
+    <div class="divider"></div>
+    <p class="section-label">A gesture this week</p>
+    <div id="gesture-card" class="connection-card"></div>
+
+    <div class="divider"></div>
+    <p class="section-label">LinkedIn post · this week</p>
+    <div id="linkedin-card" class="connection-card" style="border-color:rgba(10,102,194,0.2);background:rgba(10,102,194,0.04)"></div>
+  </div>
+
+  <!-- JOURNEY SCREEN -->
+  <div id="screen-journey" class="screen">
+    <h2 style="font-family:var(--serif);font-size:28px;font-weight:300;margin-bottom:6px">Your journey.</h2>
+    <p class="subline" style="margin-bottom:20px">Not a streak. A record of showing up.</p>
+
+    <!-- CHAIN -->
+    <p class="section-label" style="margin-bottom:10px">Your chain · don't break it</p>
+    <div id="chain-visual" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:24px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;"></div>
+
+    <div class="streak-row">
+      <div class="streak-card">
+        <div class="streak-num" style="color:var(--gold)" id="streak-now">0</div>
+        <div class="streak-lbl">days now</div>
+      </div>
+      <div class="streak-card">
+        <div class="streak-num" style="color:var(--text-dim)" id="streak-total">0</div>
+        <div class="streak-lbl">total days</div>
+      </div>
+      <div class="streak-card">
+        <div class="streak-num" style="color:var(--green)" id="streak-pct">0%</div>
+        <div class="streak-lbl">showed up</div>
+      </div>
+    </div>
+
+    <p class="section-label">Last 30 days</p>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--gold)"></div>Full</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:rgba(196,163,107,0.3)"></div>Partial</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:rgba(255,255,255,0.04)"></div>Missed</div>
+      <div class="cal-legend-item"><span style="font-size:10px">✨</span><span style="margin-left:4px">Exceptional</span></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="section-label">Today was exceptional</p>
+    <div class="win-box">
+      <p style="font-size:12px;color:var(--text-faint);font-weight:300;margin-bottom:14px;line-height:1.6;">Something happened today worth remembering. Write it down and mark it.</p>
+      <textarea id="win-input" placeholder="What did you do today that impressed even you?" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-family:var(--serif);font-size:14px;color:var(--text);resize:none;height:80px;outline:none;line-height:1.6;"></textarea>
+      <p style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-faint);margin:14px 0 10px;font-weight:300;">Choose your sticker — any emoji</p>
+      <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
+        <input id="sticker-input" type="text" maxlength="2" placeholder="✨" oninput="selectSticker(this.value)" style="width:64px;height:52px;text-align:center;font-size:26px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);outline:none;"/>
+        <div style="flex:1;font-size:12px;color:var(--text-faint);font-weight:300;line-height:1.6;">Tap the box and type or paste any emoji. It will appear on your calendar for this day.</div>
+      </div>
+      <button onclick="saveWin()" style="width:100%;padding:13px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:10px;font-family:var(--sans);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);cursor:pointer;transition:all 0.25s;">Mark this day ✦</button>
+    </div>
+
+    <div id="wins-list" style="margin-top:8px"></div>
+
+    <div class="divider"></div>
+
+    <!-- MONTHLY GOALS -->
+    <p class="section-label">This month's 3 goals</p>
+    <div class="win-box" id="monthly-goals-box">
+      <p style="font-size:12px;color:var(--text-faint);font-weight:300;margin-bottom:12px;line-height:1.6;">Visible every day. Not to pressure you — to keep you oriented.</p>
+      <input id="goal1" type="text" placeholder="Goal 1" onblur="saveMonthlyGoals()" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--serif);font-size:13px;color:var(--text);outline:none;margin-bottom:8px;"/>
+      <input id="goal2" type="text" placeholder="Goal 2" onblur="saveMonthlyGoals()" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--serif);font-size:13px;color:var(--text);outline:none;margin-bottom:8px;"/>
+      <input id="goal3" type="text" placeholder="Goal 3" onblur="saveMonthlyGoals()" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--serif);font-size:13px;color:var(--text);outline:none;"/>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- WEEKLY REVIEW -->
+    <p class="section-label">Weekly review · every Friday</p>
+    <div class="win-box">
+      <p style="font-size:12px;color:var(--text-faint);font-weight:300;margin-bottom:14px;line-height:1.6;">Three questions. Close the week honestly.</p>
+      <p style="font-size:11px;color:var(--gold);letter-spacing:0.08em;margin-bottom:6px;font-weight:400;">What did I build this week?</p>
+      <textarea id="review1" placeholder="..." onblur="saveWeeklyReview()" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--serif);font-size:13px;color:var(--text);resize:none;height:60px;outline:none;line-height:1.6;margin-bottom:12px;"></textarea>
+      <p style="font-size:11px;color:var(--gold);letter-spacing:0.08em;margin-bottom:6px;font-weight:400;">What did I avoid or delay?</p>
+      <textarea id="review2" placeholder="..." onblur="saveWeeklyReview()" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--serif);font-size:13px;color:var(--text);resize:none;height:60px;outline:none;line-height:1.6;margin-bottom:12px;"></textarea>
+      <p style="font-size:11px;color:var(--gold);letter-spacing:0.08em;margin-bottom:6px;font-weight:400;">What does next week need from me?</p>
+      <textarea id="review3" placeholder="..." onblur="saveWeeklyReview()" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--serif);font-size:13px;color:var(--text);resize:none;height:60px;outline:none;line-height:1.6;"></textarea>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="text-align:center;padding:8px 16px">
+      <p style="font-family:var(--serif);font-style:italic;font-size:15px;font-weight:300;color:var(--text-dim);line-height:1.8;">
+        "Missing a day means nothing.<br/>
+        Missing a week means nothing.<br/>
+        The only question is:<br/>
+        what are you doing today?"
+      </p>
+      <div class="quote-rule" style="margin-top:20px"></div>
+    </div>
+  </div>
+
+  <!-- IDENTITY SCREEN -->
+  <div id="screen-identity" class="screen">
+    <div class="quote-block" style="padding-top:8px">
+      <p class="quote-text" style="font-size:20px;color:var(--text);">"I am the most precious creature on this earth."</p>
+      <div class="quote-rule"></div>
+    </div>
+
+    <p class="section-label" style="margin-top:8px">Who you are</p>
+
+    <div class="identity-card">
+      <div class="identity-row">
+        <span class="identity-icon">♐</span>
+        <div>
+          <div class="identity-title">Sagittarius</div>
+          <div class="identity-sub">The archer. The traveler. The seeker. Always aiming toward the horizon.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="identity-card">
+      <div class="identity-row">
+        <span class="identity-icon">🐓</span>
+        <div>
+          <div class="identity-title">Water Rooster</div>
+          <div class="identity-sub">Precise. Observant. Deeply just. Intuitive. Philosophically deep.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="identity-card gold-card">
+      <div class="identity-row">
+        <span class="identity-icon" style="color:var(--gold)">11</span>
+        <div>
+          <div class="identity-title" style="color:var(--gold);font-family:var(--sans)">Master Number 11 · The Illuminator</div>
+          <div class="identity-sub">The visionary who came to light the way for others. Not by announcing it. By being so fully herself that others around her wake up.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="identity-card">
+      <div class="identity-row">
+        <span class="identity-icon">𝕃</span>
+        <div>
+          <div class="identity-title" style="font-family:var(--sans)">Lanya · Name Number 1 · The Pioneer</div>
+          <div class="identity-sub">You were born the Pioneer.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="identity-card">
+      <div class="identity-row">
+        <span class="identity-icon">𝔻</span>
+        <div>
+          <div class="identity-title" style="font-family:var(--sans)">Dania · Name Number 4 · The Builder</div>
+          <div class="identity-sub">You became the Builder.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="identity-card rumi-card">
+      <div class="identity-sub" style="margin-bottom:8px;font-size:10px;letter-spacing:0.15em;text-transform:uppercase">Four days before Shab-e Arūs</div>
+      <div class="identity-sub" style="font-family:var(--serif);font-style:italic;font-size:14px;line-height:1.7">Rumi's sacred night of reunion with God. Born December 13th, 1993. You did not choose Rumi. He was always close to you. From before you knew his name.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="section-label">Your two guiding quotes</p>
+    <div class="identity-card">
+      <p style="font-family:var(--serif);font-style:italic;font-size:15px;color:var(--text-dim);line-height:1.7;margin-bottom:10px">"If you don't add on to life, you will be exceeding in it."</p>
+      <p style="font-family:var(--serif);font-style:italic;font-size:15px;color:var(--text-dim);line-height:1.7">"If you knew everything, you would forgive anyone."</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="section-label">When you forget</p>
+    <div id="forget-wheel" class="forget-wheel">
+      <button class="forget-btn" onclick="showReminder()">Close your eyes.<br/>Ask: <em>Who are you?</em></button>
+    </div>
+    <div id="reminder-msg" class="reminder-msg" style="display:none"></div>
+
+    <div class="divider"></div>
+    <p class="section-label">Your strengths</p>
+    <div class="tags-row" id="strengths-tags"></div>
+
+    <div class="divider"></div>
+    <p class="section-label">Your Konya notebook</p>
+    <div class="identity-card rumi-card">
+      <p style="font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text-dim);line-height:1.8">June 8th, 2018. A pressed lavender flower still inside it. It still smells. You return to it when you struggle. It still speaks to you.<br/><br/>The Dania reading it now is completely different from the one who read it then. That is not loss. That is distance traveled.</p>
+    </div>
+
+    <div class="divider"></div>
+    <p class="section-label">A moment with Baba</p>
+    <div class="identity-card rumi-card">
+      <p style="font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text-faint);margin-bottom:12px;line-height:1.6;">He is still here. Write to him when you need to. No one else will see this.</p>
+      <textarea id="father-input" placeholder="Baba, today I want to tell you..." onblur="saveFatherMoment()" style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);padding:8px 0;font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text);resize:none;height:80px;outline:none;line-height:1.8;"></textarea>
+      <div id="father-saved" style="font-size:10px;color:var(--text-faint);margin-top:8px;letter-spacing:0.08em;display:none">saved quietly ✦</div>
+    </div>
+  </div>
+
+  <!-- PRAYER MODAL -->
+  <div id="dua-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:#0d0d0d;overflow-y:auto;padding:40px 28px 60px;color:#f0ede6;">
+    <div style="max-width:440px;margin:0 auto;">
+
+      <!-- Step indicator -->
+      <div style="display:flex;justify-content:center;gap:8px;margin-bottom:28px;">
+        <div id="prayer-dot-0" style="width:8px;height:8px;border-radius:50%;background:var(--gold);transition:all 0.3s;"></div>
+        <div id="prayer-dot-1" style="width:8px;height:8px;border-radius:50%;background:rgba(196,163,107,0.3);transition:all 0.3s;"></div>
+        <div id="prayer-dot-2" style="width:8px;height:8px;border-radius:50%;background:rgba(196,163,107,0.3);transition:all 0.3s;"></div>
+      </div>
+
+      <!-- Prayer label -->
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-size:24px;margin-bottom:8px" id="prayer-icon">🤲</div>
+        <p style="font-family:var(--sans);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);font-weight:400;" id="prayer-label">دعاء الصباح</p>
+      </div>
+
+      <!-- Prayer text -->
+      <div id="prayer-text" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;line-height:2.4;color:rgba(240,237,230,0.9);text-align:right;direction:rtl;margin-bottom:36px;"></div>
+
+      <!-- Buttons -->
+      <button id="prayer-next-btn" onclick="nextPrayer()" style="width:100%;padding:16px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:14px;font-family:'Jost',sans-serif;font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);cursor:pointer;transition:all 0.3s;">
+        التالي · Next
+      </button>
+      <button onclick="closeDua()" style="width:100%;padding:12px;margin-top:10px;background:transparent;border:1px solid rgba(255,255,255,0.06);border-radius:14px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,237,230,0.25);cursor:pointer;">
+        Skip
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+
+const QUOTES = [
+  "I am the most precious creature on this earth.",
+  "Start before you are ready. God will help.",
+  "The wound is the place where the Light enters you. — Rumi",
+  "If you don't add on to life, you will be exceeding in it.",
+  "If you knew everything, you would forgive anyone.",
+  "Out beyond ideas of wrongdoing and rightdoing, there is a field. I'll meet you there. — Rumi",
+  "You were born a Pioneer. You became a Builder. Now you are learning to rest.",
+  "Let yourself be silently drawn by the strange pull of what you really love. — Rumi",
+  "Small steps, every day. This is Kaizen.",
+  "You are not a drop in the ocean. You are the entire ocean in a drop. — Rumi",
+  "Always go for the root cause.",
+  "Finding happiness in being busy — Ikigai.",
+  "The world within you shapes the world around you.",
+  "Less force. More precision. This is the next level of you.",
+  "You are the Illuminator. You don't announce the light — you are it.",
+];
+
+const FULL_ROUTINE = [
+  { id:"f1", time:"20 min", task:"Exercise + warm water", note:"7 min yoga · walk · stretch  ×2 evening", icon:"🌿" },
+  { id:"f2", time:"5 min", task:"Morning plank", note:"Core · spine · strength", icon:"🧱" },
+  { id:"f3", time:"15 min", task:"Meditate & pray", note:"Mindvalley", icon:"🤲" },
+  { id:"f4", time:"20 min", task:"Journaling", note:"", icon:"✍️" },
+  { id:"f5", time:"20 min", task:"Podcast", note:"doCEO", icon:"🎧" },
+  { id:"f6", time:"20 min", task:"Read & learn", note:"AI · Crypto · Coursera", icon:"📖" },
+  { id:"f7", time:"30 min", task:"Book reading", note:"", icon:"📚" },
+  { id:"f8", time:"15 min", task:"TED Talk", note:"One talk, one idea, every day", icon:"🎤" },
+  { id:"f9", time:"30 min", task:"PhD work", note:"Research · reading · writing", icon:"🎓" },
+  { id:"f10", time:"20 min", task:"Plan & organize", note:"Schedule your day", icon:"🗓️" },
+  { id:"f11", time:"15 min", task:"Organize your space", note:"", icon:"✨" },
+];
+
+const MIN_ROUTINE = [
+  { id:"m1", time:"20 min", task:"Walk", note:"Outside or inside — just move", icon:"🚶‍♀️" },
+  { id:"m2", time:"5 min", task:"Morning plank", note:"Just 5 minutes. That's enough.", icon:"🧱" },
+  { id:"m3", time:"10 min", task:"Journal", note:"Even 5 lines is enough", icon:"✍️" },
+  { id:"m4", time:"30 min", task:"PhD work", note:"Even 30 min moves it forward", icon:"🎓" },
+  { id:"m5", time:"10 min", task:"Organize your schedule", note:"Know what today holds", icon:"🗓️" },
+];
+
+const NOURISH = [
+  { id:"n1", task:"Vitamin C", icon:"🍊" },
+  { id:"n2", task:"Protein scoop", icon:"💪" },
+];
+
+const EVENING = [
+  { id:"e1", task:"Meals", icon:"🍽️" },
+  { id:"e2", task:"Calm your mind", icon:"🌙" },
+  { id:"e3", task:"Face stamping", icon:"🪡" },
+  { id:"e4", task:"Face mask & creams", icon:"🌸" },
+  { id:"e5", task:"Teeth & floss", icon:"💎" },
+];
+
+const TRAVEL = [
+  { id:"t1", task:"Duolingo", icon:"🌍" },
+  { id:"t2", task:"Chess", icon:"♟️" },
+];
+
+const ALARMS = [
+  { time:"5:30 AM", label:"Wake up", msg:"The morning is yours before the world asks anything of you. Begin gently." },
+  { time:"9:00 AM", label:"Check in", msg:"Have you moved your body? Even a little movement is a promise kept to yourself." },
+  { time:"1:00 PM", label:"Nourishment", msg:"Vitamins. Protein. The body that carries your vision deserves to be fed." },
+  { time:"4:00 PM", label:"Connection", msg:"Who have you not called yet? One voice, one message — you are someone's light today." },
+  { time:"9:00 PM", label:"Evening", msg:"The last hour belongs to you. Calm your mind. You did enough. You are enough." },
+];
+
+const FAMILY_PROMPTS = [
+  "Call a family member today. Not for news — just to hear their voice.",
+  "Send a voice note to someone in your family. Let them know you thought of them.",
+  "A message to family today. Something simple, from the heart.",
+];
+
+const RELATION_PROMPTS = [
+  "Reach out to someone in your network today. A check-in, a thought, a connection.",
+  "One message to a colleague or friend. The relationship that is maintained quietly is the one that lasts.",
+  "Who have you not spoken to this week? Send them something real today.",
+];
+
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+
+const todayKey = () => new Date().toISOString().split("T")[0];
+
+function getWeekKeySimple() {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(new Date().setDate(diff));
+  return monday.toISOString().split("T")[0];
+}
+
+function load(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+
+let mode = load("dania_mode_" + todayKey(), null);
+let checked = load("dania_checked_" + todayKey(), {});
+let nourish = load("dania_nourish_" + todayKey(), {});
+let evening = load("dania_evening_" + todayKey(), {});
+let travel = load("dania_travel_" + todayKey(), {});
+let connect = load("dania_connect_" + todayKey(), {});
+let linkedin = load("dania_linkedin", {});
+let gesture = load("dania_gesture_" + getWeekKeySimple(), { type:"", recipient:"", done:false });
+let wins = load("dania_wins", {});
+let water = load("dania_water_" + todayKey(), 0);
+let mood = load("dania_mood_" + todayKey(), null);
+let gratitude = load("dania_gratitude_" + todayKey(), "");
+let intention = load("dania_intention_" + todayKey(), "");
+let monthlyGoals = load("dania_monthly_goals", { g1:"", g2:"", g3:"" });
+let weeklyReview = load("dania_weekly_" + getWeekKeySimple(), { r1:"", r2:"", r3:"" });
+let fatherMoment = load("dania_father_" + todayKey(), "");
+let decision = load("dania_decision_" + todayKey(), "");
+let history = load("dania_history", {});
+
+// ── GREETING ──────────────────────────────────────────────────────────────────
+
+function setGreeting() {
+  const hour = new Date().getHours();
+  let timeGreeting = "";
+  let arabic = "";
+
+  if (hour >= 4 && hour < 7) {
+    timeGreeting = "فجر · Dawn";
+    arabic = "The world is still asleep. This hour is yours.";
+  } else if (hour >= 7 && hour < 12) {
+    timeGreeting = "صباح الخير · Good morning";
+    arabic = "Begin with intention. The day is wide open.";
+  } else if (hour >= 12 && hour < 15) {
+    timeGreeting = "ظهر · Midday";
+    arabic = "Half the day done. What did you build?";
+  } else if (hour >= 15 && hour < 18) {
+    timeGreeting = "عصر · Afternoon";
+    arabic = "The light is golden. Keep going.";
+  } else if (hour >= 18 && hour < 21) {
+    timeGreeting = "مساء الخير · Good evening";
+    arabic = "The day is closing. Did you show up?";
+  } else {
+    timeGreeting = "ليل · Night";
+    arabic = "Rest is part of the work. You did enough.";
+  }
+
+  // Try to get city from geolocation
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`)
+        .then(r => r.json())
+        .then(data => {
+          const city = data.address.city || data.address.town || data.address.village || data.address.county || "";
+          updateGreeting(timeGreeting, city, arabic);
+        }).catch(() => updateGreeting(timeGreeting, "", arabic));
+    }, () => updateGreeting(timeGreeting, "", arabic));
+  } else {
+    updateGreeting(timeGreeting, "", arabic);
+  }
+}
+
+function updateGreeting(timeStr, city, sub) {
+  const el = document.getElementById("main-greeting");
+  if (!el) return;
+  const cityLine = city ? ` · ${city}` : "";
+  el.innerHTML = `${timeStr}${cityLine},<br/><span>Dania.</span>`;
+  const subEl = document.getElementById("home-subline");
+  if (subEl) {
+    const d = new Date();
+    const streak = calcStreak();
+    subEl.textContent = d.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" }) +
+      (streak > 0 ? " · " + streak + " day" + (streak > 1 ? "s" : "") + " showing up" : "");
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+window.addEventListener("load", () => {
+  // Quote
+  const qi = Math.floor(Math.random() * QUOTES.length);
+  document.getElementById("daily-quote").textContent = "\"" + QUOTES[qi] + "\"";
+
+  // Greeting based on time + location
+  setGreeting();
+
+  // Return banner
+  const td = history[todayKey()];
+  if (td && td.done > 0) {
+    const b = document.getElementById("return-banner");
+    b.style.display = "block";
+    b.textContent = "You already showed up today. " + td.done + " of " + td.total + " done. You can always do more — or let today be enough.";
+  }
+
+  // Mode cards
+  if (mode) {
+    document.getElementById("card-" + mode).classList.add("selected");
+  }
+
+  // Render lists
+  renderMood();
+  renderGratitude();
+  renderIntention();
+  renderDecision();
+  renderWater();
+  renderNourish();
+  renderEvening();
+  renderRoutine();
+  renderTravel();
+  renderConnect();
+  renderGesture();
+  renderLinkedIn();
+  renderJourney();
+  renderMonthlyGoals();
+  renderWeeklyReview();
+  renderFatherMoment();
+});
+
+// ── SCREENS ───────────────────────────────────────────────────────────────────
+
+function showScreen(name) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("visible"));
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("screen-" + name).classList.add("visible");
+  // re-trigger animation
+  const s = document.getElementById("screen-" + name);
+  s.style.animation = "none"; s.offsetHeight;
+  s.style.animation = "";
+
+  const btns = document.querySelectorAll(".nav-btn");
+  const map = { home:0, today:1, connect:2, journey:3, identity:4 };
+  btns[map[name]].classList.add("active");
+
+  if (name === "journey") { renderJourney(); renderMonthlyGoals(); renderWeeklyReview(); }
+  if (name === "identity") { renderIdentity(); renderFatherMoment(); }
+  if (name === "connect") { renderLinkedIn(); renderGesture(); }
+  if (name === "home") { renderMood(); renderGratitude(); renderIntention(); renderDecision(); renderWater(); }
+}
+
+// ── MODE ──────────────────────────────────────────────────────────────────────
+
+function selectMode(m) {
+  mode = m;
+  save("dania_mode_" + todayKey(), mode);
+  document.querySelectorAll(".mode-card").forEach(c => c.classList.remove("selected"));
+  document.getElementById("card-" + m).classList.add("selected");
+  checked = {};
+  save("dania_checked_" + todayKey(), {});
+  renderRoutine();
+  showScreen("today");
+}
+
+function switchMode() {
+  if (!mode) return;
+  selectMode(mode === "full" ? "min" : "full");
+}
+
+// ── ROUTINE ───────────────────────────────────────────────────────────────────
+
+function renderRoutine() {
+  const list = document.getElementById("routine-list");
+  const noMode = document.getElementById("no-mode-msg");
+  const minBanner = document.getElementById("min-banner");
+  const pw = document.getElementById("progress-wrap");
+  const tDiv = document.getElementById("travel-divider");
+  const tLbl = document.getElementById("travel-label");
+  const lbl = document.getElementById("today-label");
+
+  if (!mode) {
+    list.innerHTML = ""; noMode.style.display = "block";
+    minBanner.style.display = "none"; pw.style.display = "none";
+    tDiv.style.display = "none"; tLbl.style.display = "none";
+    return;
+  }
+
+  noMode.style.display = "none";
+  tDiv.style.display = ""; tLbl.style.display = "";
+  minBanner.style.display = mode === "min" ? "block" : "none";
+  lbl.textContent = mode === "full" ? "Full morning routine" : "Minimum — you showed up";
+
+  const routine = mode === "full" ? FULL_ROUTINE : MIN_ROUTINE;
+  list.innerHTML = routine.map(item => itemHTML(item, checked[item.id], "done", item.time)).join("");
+
+  const done = routine.filter(i => checked[i.id]).length;
+  pw.style.display = "block";
+  document.getElementById("progress-fill").style.width = (done / routine.length * 100) + "%";
+  document.getElementById("progress-text").textContent = done + " of " + routine.length + " complete";
+
+  const cm = document.getElementById("complete-msg");
+  const ct = document.getElementById("complete-text");
+  if (done === routine.length) {
+    cm.style.display = "block";
+    ct.textContent = mode === "min"
+      ? "You came back. That's everything. 🌿"
+      : "Today is yours. Every single part of it. ✨";
+  } else {
+    cm.style.display = "none";
+  }
+
+  // Save history
+  history[todayKey()] = { mode, done, total: routine.length };
+  save("dania_history", history);
+}
+
+function toggleRoutine(id) {
+  // If tapping the pray item and not yet checked — show du'a first
+  const prayIds = ["f3", "m2"]; // pray item IDs in full and min routine — adjust if needed
+  // Actually pray is f3 in full, not in min. Check by task name
+  const routine = mode === "full" ? FULL_ROUTINE : MIN_ROUTINE;
+  const item = routine.find(i => i.id === id);
+  if (item && item.task === "Meditate & pray" && !checked[id]) {
+    showDua(id);
+    return;
+  }
+
+  checked[id] = !checked[id];
+  save("dania_checked_" + todayKey(), checked);
+  if (checked[id]) {
+    if (item) startTimer(item);
+  } else {
+    if (activeTimer && activeTimer.id === id) stopTimer();
+  }
+  renderRoutine();
+}
+
+// ── PRAYER CAROUSEL ───────────────────────────────────────────────────────────
+
+const PRAYERS = [
+  {
+    label: "دعاء الصباح اليومي",
+    icon: "🌅",
+    text: `اللَّهُمَّ إِنِّي أَسْأَلُكَ الذَّكَاءَ الَّذِي يَرْزُقُنِي الْقُدْرَةَ عَلَى التَّعَلُّمِ وَالْفَهْمِ، وَسُرْعَةَ الْبَدِيهَةِ، وَيُيَسِّرُ لِي سُبُلَ الْإِبْدَاعِ، وَاحْفَظْ عَقْلِي مِنَ الضَّيَاعِ، وَذِهْنِي مِنَ الشُّرُودِ، وَفِكْرِي مِنَ التَّشَتُّتِ.
+<br/><br/>
+وَاللَّهُمَّ إِنِّي أَسْأَلُكَ أَنْ تَرْزُقَنِي بِالذَّكَاءِ الْعَاطِفِيِّ لِأَفْهَمَ نَفْسِي وَأَتَعَامَلَ بِذَكَاءٍ مَعَ مَنْ حَوْلِي، وَاجْعَلْنِي مُتَّزِنَةً فِي مَشَاعِرِي، فَلَا أُبَالِغُ فِي رُدُودِ أَفْعَالِي، وَلَا أَسْتَنْزِفُ عَوَاطِفِي، وَلَا أَتَسَرَّعُ فِي انْفِعَالَاتِي، وَلَا أَكْتُمُ مَا يُؤْذِينِي.
+<br/><br/>
+وَأَسْأَلُكَ يَا اللهُ أَنْ تَرْزُقَنِي بِالذَّكَاءِ الِاجْتِمَاعِيِّ لِأُحْسِنَ التَّصَرُّفَ وَأَكْسِبَ مَحَبَّةَ النَّاسِ بِصِدْقٍ، وَأَبْنِيَ عَلَاقَاتٍ قَوِيَّةً وَمُثْمِرَةً فِي دُنْيَايَ وَآخِرَتِي.
+<br/><br/>
+وَأَسْأَلُكَ أَنْ تُمَدَّنِي بِالذَّكَاءِ اللُّغَوِيِّ لِأُعَبِّرَ عَنْ نَفْسِي بِوُضُوحٍ، وَارْزُقْنِي الْفَصَاحَةَ وَالْبَلَاغَةَ وَالْبَيَانَ، وَاحْفَظْنِي مِنْ زَلَّاتِ اللِّسَانِ.
+<br/><br/>
+اللَّهُمَّ اجْعَلْنِي ذَكِيَّةً فِي تَفْكِيرِي، قَوِيَّةً فِي شَخْصِيَّتِي، فَطِنَةً فِي حَدِيثِي، رَاقِيَةً فِي أُسْلُوبِي، لَبِقَةً فِي تَعَامُلِي، حَكِيمَةً فِي قَرَارَاتِي، وَارْزُقْنِي هَيْبَةَ الْحُضُورِ وَنِعْمَةَ الْقَبُولِ.
+<br/><br/>
+وَاجْعَلْنِي مِنَ الْمَقْبُولِينَ فِي الدُّنْيَا وَالْآخِرَةِ بِلُطْفِكَ وَكَرَمِكَ وَتَدْبِيرِكَ يَا رَبَّ الْعَالَمِينَ. آمِين.`
+  },
+  {
+    label: "بسم الله على قلبي",
+    icon: "🤲",
+    text: `بِسْمِ اللهِ عَلَى قَلْبِي وَنَفْسِي، بِسْمِ اللهِ عَلَى دِينِي وَعَقْلِي، بِسْمِ اللهِ عَلَى أَهْلِي وَمَالِي، بِسْمِ اللهِ عَلَى مَا أَعْطَانِي رَبِّي.
+<br/><br/>
+بِسْمِ اللهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ.
+<br/><br/>
+اللهُ رَبِّي لَا أُشْرِكُ بِهِ شَيْئًا، اللهُ أَكْبَرُ اللهُ أَكْبَرُ، وَأَعَزُّ وَأَجَلُّ مِمَّا أَخَافُ وَأَحْذَرُ. اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ شَرِّ نَفْسِي.
+<br/><br/>
+بِسْمِ اللهِ الرَّحْمَنِ الرَّحِيمِ، تَوَكَّلْتُ عَلَى اللهِ الَّذِي لَا يَغْلِبُهُ أَحَدٌ، تَوَكَّلْتُ عَلَى الْجَبَّارِ الَّذِي لَا يَقْهَرُهُ أَحَدٌ، تَوَكَّلْتُ عَلَى الْعَزِيزِ الرَّحِيمِ الَّذِي يَرَانِي وَتَقَلُّبِي فِي السَّاجِدِينَ.
+<br/><br/>
+بِسْمِ اللهِ، تَوَكَّلْتُ عَلَى اللهِ، لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللهِ.`
+  },
+  {
+    label: "آية الكرسي",
+    icon: "📿",
+    text: `اللهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ.`
+  }
+];
+
+let currentPrayer = 0;
+let pendingPrayId = null;
+
+function showDua(id) {
+  pendingPrayId = id;
+  currentPrayer = 0;
+  renderPrayer();
+  document.getElementById("dua-modal").style.display = "block";
+  document.body.style.overflow = "hidden";
+}
+
+function renderPrayer() {
+  const p = PRAYERS[currentPrayer];
+  document.getElementById("prayer-icon").textContent = p.icon;
+  document.getElementById("prayer-label").textContent = p.label;
+  document.getElementById("prayer-text").innerHTML = p.text;
+
+  // Update dots
+  PRAYERS.forEach((_, i) => {
+    const dot = document.getElementById("prayer-dot-" + i);
+    if (dot) dot.style.background = i === currentPrayer ? "var(--gold)" : "rgba(196,163,107,0.25)";
+  });
+
+  // Update button text
+  const btn = document.getElementById("prayer-next-btn");
+  if (btn) btn.textContent = currentPrayer < PRAYERS.length - 1 ? "التالي · Next ›" : "آمين · Begin ✓";
+
+  // Scroll to top of modal
+  const modal = document.getElementById("dua-modal");
+  if (modal) modal.scrollTop = 0;
+}
+
+function nextPrayer() {
+  if (currentPrayer < PRAYERS.length - 1) {
+    currentPrayer++;
+    renderPrayer();
+  } else {
+    closeDua();
+  }
+}
+
+function closeDua() {
+  document.getElementById("dua-modal").style.display = "none";
+  document.body.style.overflow = "";
+  if (pendingPrayId) {
+    const id = pendingPrayId;
+    pendingPrayId = null;
+    checked[id] = true;
+    save("dania_checked_" + todayKey(), checked);
+    const routine = mode === "full" ? FULL_ROUTINE : MIN_ROUTINE;
+    const item = routine.find(i => i.id === id);
+    if (item) startTimer(item);
+    renderRoutine();
+  }
+}
+
+function itemHTML(item, isDone, doneClass, time) {
+  const isActive = activeTimer && activeTimer.id === item.id;
+  return `<div class="item ${isDone ? doneClass : ""} ${isActive ? "item-timing" : ""}" onclick="toggleRoutine('${item.id}')">
+    <div class="check">${isDone ? "✓" : ""}</div>
+    <span class="item-icon">${item.icon}</span>
+    <div class="item-body">
+      <div class="item-task">${item.task}</div>
+      ${item.note ? `<div class="item-note">${item.note}</div>` : ""}
+      ${isActive ? `<div class="item-timer-bar"><div class="item-timer-fill" id="bar-${item.id}"></div></div>` : ""}
+    </div>
+    <div style="text-align:right;flex-shrink:0">
+      <div class="item-time">${time}</div>
+      ${isActive ? `<div class="item-timer-txt" id="txt-${item.id}">--:--</div>` : ""}
+    </div>
+  </div>`;
+}
+
+// ── TIMER ENGINE ──────────────────────────────────────────────────────────────
+
+let activeTimer = null;
+let timerInterval = null;
+
+function parseMinutes(timeStr) {
+  const match = timeStr.match(/(\d+)/);
+  return match ? parseInt(match[1]) : 0;
+}
+
+function startTimer(item) {
+  stopTimer();
+  const mins = parseMinutes(item.time);
+  if (!mins) return;
+  const totalSecs = mins * 60;
+  const endTime = Date.now() + totalSecs * 1000;
+  activeTimer = { id: item.id, task: item.task, totalSecs, endTime };
+  showFloatingTimer(item.task);
+  timerInterval = setInterval(() => tickTimer(), 1000);
+  tickTimer();
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  activeTimer = null;
+  hideFloatingTimer();
+}
+
+function tickTimer() {
+  if (!activeTimer) return;
+  const remaining = Math.max(0, Math.round((activeTimer.endTime - Date.now()) / 1000));
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  const display = `${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}`;
+  const pct = ((activeTimer.totalSecs - remaining) / activeTimer.totalSecs) * 100;
+
+  // Update floating timer
+  const ft = document.getElementById("floating-timer-txt");
+  if (ft) ft.textContent = display;
+  const fb = document.getElementById("floating-timer-bar");
+  if (fb) fb.style.width = pct + "%";
+  const fl = document.getElementById("floating-timer-label");
+  if (fl) fl.textContent = activeTimer.task;
+
+  // Update inline bar
+  const bar = document.getElementById("bar-" + activeTimer.id);
+  if (bar) bar.style.width = pct + "%";
+  const txt = document.getElementById("txt-" + activeTimer.id);
+  if (txt) txt.textContent = display;
+
+  if (remaining === 0) {
+    timerDone();
+  }
+}
+
+function timerDone() {
+  const taskName = activeTimer ? activeTimer.task : "Task";
+  stopTimer();
+  // Vibrate
+  if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]);
+  // Sound
+  playDoneSound();
+  // Notify
+  showTimerDoneMsg(taskName);
+  renderRoutine();
+}
+
+function playDoneSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [523, 659, 784, 1047].forEach((freq, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq;
+      o.type = "sine";
+      g.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.18);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.4);
+      o.start(ctx.currentTime + i * 0.18);
+      o.stop(ctx.currentTime + i * 0.18 + 0.4);
+    });
+  } catch(e) {}
+}
+
+function showFloatingTimer(taskName) {
+  let el = document.getElementById("floating-timer");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "floating-timer";
+    el.innerHTML = `
+      <div id="floating-timer-label" style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;font-weight:400"></div>
+      <div id="floating-timer-txt" style="font-family:var(--serif);font-size:32px;font-weight:300;color:var(--text);letter-spacing:0.05em;font-variant-numeric:tabular-nums;line-height:1">--:--</div>
+      <div style="height:2px;background:var(--border);border-radius:2px;margin-top:10px;overflow:hidden">
+        <div id="floating-timer-bar" style="height:100%;background:var(--gold);border-radius:2px;width:0%;transition:width 1s linear"></div>
+      </div>
+      <button onclick="stopTimer();renderRoutine();" style="margin-top:10px;width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint);cursor:pointer;">Stop</button>`;
+    document.body.appendChild(el);
+  }
+  el.style.display = "block";
+  document.getElementById("floating-timer-label").textContent = taskName;
+}
+
+function hideFloatingTimer() {
+  const el = document.getElementById("floating-timer");
+  if (el) el.style.display = "none";
+}
+
+function showTimerDoneMsg(taskName) {
+  let el = document.getElementById("timer-done-msg");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "timer-done-msg";
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<div style="font-size:28px;margin-bottom:8px">✨</div><div style="font-family:var(--serif);font-size:18px;font-style:italic;font-weight:300;margin-bottom:4px">${taskName} — done.</div><div style="font-size:12px;color:var(--text-faint);margin-top:6px">Tap to close</div>`;
+  el.style.display = "flex";
+  el.onclick = () => { el.style.display = "none"; };
+  setTimeout(() => { if (el) el.style.display = "none"; }, 5000);
+}
+
+
+// ── NOURISH ───────────────────────────────────────────────────────────────────
+
+function renderNourish() {
+  document.getElementById("nourish-list").innerHTML = NOURISH.map(n =>
+    `<div class="nourish-item ${nourish[n.id] ? "done" : ""}" onclick="toggleNourish('${n.id}')">
+      <div class="check">${nourish[n.id] ? "✓" : ""}</div>
+      <span class="item-icon">${n.icon}</span>
+      <div class="item-body"><div class="item-task">${n.task}</div></div>
+    </div>`
+  ).join("");
+}
+
+function toggleNourish(id) {
+  nourish[id] = !nourish[id];
+  save("dania_nourish_" + todayKey(), nourish);
+  renderNourish();
+}
+
+// ── EVENING ───────────────────────────────────────────────────────────────────
+
+function renderEvening() {
+  document.getElementById("evening-list").innerHTML = EVENING.map(e =>
+    `<div class="item ${evening[e.id] ? "done" : ""}" onclick="toggleEvening('${e.id}')">
+      <div class="check">${evening[e.id] ? "✓" : ""}</div>
+      <span class="item-icon">${e.icon}</span>
+      <div class="item-body"><div class="item-task">${e.task}</div></div>
+    </div>`
+  ).join("");
+}
+
+function toggleEvening(id) {
+  evening[id] = !evening[id];
+  save("dania_evening_" + todayKey(), evening);
+  renderEvening();
+}
+
+// ── TRAVEL ────────────────────────────────────────────────────────────────────
+
+function renderTravel() {
+  document.getElementById("travel-list").innerHTML = TRAVEL.map(t =>
+    `<div class="travel-item ${travel[t.id] ? "done" : ""}" onclick="toggleTravel('${t.id}')">
+      <span>${t.icon}</span><span>${t.task}</span>
+    </div>`
+  ).join("");
+}
+
+function toggleTravel(id) {
+  travel[id] = !travel[id];
+  save("dania_travel_" + todayKey(), travel);
+  renderTravel();
+}
+
+// ── CONNECTION RITUAL ─────────────────────────────────────────────────────────
+
+function renderConnect() {
+  const dayNum = Math.floor(Date.now() / 86400000);
+  const fPrompt = FAMILY_PROMPTS[dayNum % FAMILY_PROMPTS.length];
+  const rPrompt = RELATION_PROMPTS[dayNum % RELATION_PROMPTS.length];
+
+  const fDone = connect["family"];
+  const rDone = connect["relation"];
+
+  document.getElementById("connect-family-card").innerHTML = `
+    <div class="connection-type family">Today · Family</div>
+    <p class="connection-prompt">${fPrompt}</p>
+    <div class="connection-check-row">
+      <button class="connection-btn ${fDone === "voice" ? "done-btn" : ""}" onclick="markConnect('family','voice')">📞 Voice call</button>
+      <button class="connection-btn ${fDone === "message" ? "done-btn" : ""}" onclick="markConnect('family','message')">💬 Message</button>
+    </div>`;
+
+  document.getElementById("connect-relation-card").innerHTML = `
+    <div class="connection-type relation">Today · Relationship</div>
+    <p class="connection-prompt">${rPrompt}</p>
+    <div class="connection-check-row">
+      <button class="connection-btn green ${rDone === "voice" ? "done-btn green" : ""}" onclick="markConnect('relation','voice')">📞 Voice call</button>
+      <button class="connection-btn green ${rDone === "message" ? "done-btn green" : ""}" onclick="markConnect('relation','message')">💬 Message</button>
+    </div>`;
+}
+
+function markConnect(type, method) {
+  connect[type] = connect[type] === method ? null : method;
+  save("dania_connect_" + todayKey(), connect);
+  renderConnect();
+}
+
+// ── ALARMS ────────────────────────────────────────────────────────────────────
+
+function renderAlarms() {
+  const el = document.getElementById("alarms-list");
+  if (!el) return;
+  el.innerHTML = ALARMS.map(a =>
+    `<div class="alarm-card">
+      <div class="alarm-time">${a.time}</div>
+      <div class="alarm-msg">"${a.msg}"</div>
+      <div class="alarm-label">${a.label}</div>
+    </div>`
+  ).join("");
+}
+
+// ── MOOD ──────────────────────────────────────────────────────────────────────
+
+const MOODS = [
+  { id:"fire", emoji:"🔥", label:"On fire" },
+  { id:"grow", emoji:"🌱", label:"Growing" },
+  { id:"wave", emoji:"🌊", label:"Surviving" },
+  { id:"rest", emoji:"🌙", label:"Resting" },
+];
+
+function renderMood() {
+  const row = document.getElementById("mood-row");
+  if (!row) return;
+  row.innerHTML = MOODS.map(m =>
+    `<button onclick="setMood('${m.id}')" style="flex:1;padding:12px 4px;border-radius:12px;cursor:pointer;font-family:var(--sans);font-size:11px;letter-spacing:0.05em;text-align:center;transition:all 0.25s;-webkit-user-select:none;user-select:none;background:${mood===m.id?"var(--gold-dim)":"var(--surface)"};border:1px solid ${mood===m.id?"var(--gold-border)":"var(--border)"};color:${mood===m.id?"var(--gold)":"var(--text-faint)"};"><div style="font-size:20px;margin-bottom:4px">${m.emoji}</div>${m.label}</button>`
+  ).join("");
+}
+
+function setMood(id) {
+  mood = id;
+  save("dania_mood_" + todayKey(), mood);
+  // save to history for calendar
+  if (history[todayKey()]) history[todayKey()].mood = id;
+  save("dania_history", history);
+  renderMood();
+}
+
+// ── GRATITUDE ─────────────────────────────────────────────────────────────────
+
+function renderGratitude() {
+  const el = document.getElementById("gratitude-input");
+  if (el) el.value = gratitude;
+}
+
+function saveGratitude() {
+  const el = document.getElementById("gratitude-input");
+  if (el) { gratitude = el.value; save("dania_gratitude_" + todayKey(), gratitude); }
+}
+
+// ── INTENTION ─────────────────────────────────────────────────────────────────
+
+function renderIntention() {
+  const el = document.getElementById("intention-input");
+  if (el) el.value = intention;
+}
+
+function saveIntention() {
+  const el = document.getElementById("intention-input");
+  if (el) { intention = el.value; save("dania_intention_" + todayKey(), intention); }
+}
+
+function renderDecision() {
+  const el = document.getElementById("decision-input");
+  if (el) el.value = decision;
+}
+
+function saveDecision() {
+  const el = document.getElementById("decision-input");
+  if (el) { decision = el.value; save("dania_decision_" + todayKey(), decision); }
+}
+
+// ── WATER ─────────────────────────────────────────────────────────────────────
+
+function renderWater() {
+  const el = document.getElementById("water-tracker");
+  if (!el) return;
+  const glasses = Array.from({length:8}, (_,i) =>
+    `<button onclick="setWater(${i+1})" style="font-size:22px;background:none;border:none;cursor:pointer;opacity:${i < water ? "1" : "0.25"};transition:all 0.2s;-webkit-user-select:none;user-select:none;">💧</button>`
+  ).join("");
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">${glasses}</div>
+  <p style="font-size:10px;color:var(--text-faint);margin-top:6px;letter-spacing:0.08em;">${water} of 8 glasses</p>`;
+}
+
+function setWater(n) {
+  water = water === n ? n - 1 : n;
+  save("dania_water_" + todayKey(), water);
+  renderWater();
+}
+
+// ── MONTHLY GOALS ─────────────────────────────────────────────────────────────
+
+function renderMonthlyGoals() {
+  const g1 = document.getElementById("goal1");
+  const g2 = document.getElementById("goal2");
+  const g3 = document.getElementById("goal3");
+  if (g1) g1.value = monthlyGoals.g1 || "";
+  if (g2) g2.value = monthlyGoals.g2 || "";
+  if (g3) g3.value = monthlyGoals.g3 || "";
+}
+
+function saveMonthlyGoals() {
+  monthlyGoals = {
+    g1: document.getElementById("goal1")?.value || "",
+    g2: document.getElementById("goal2")?.value || "",
+    g3: document.getElementById("goal3")?.value || "",
+  };
+  save("dania_monthly_goals", monthlyGoals);
+}
+
+// ── WEEKLY REVIEW ─────────────────────────────────────────────────────────────
+
+function renderWeeklyReview() {
+  const r1 = document.getElementById("review1");
+  const r2 = document.getElementById("review2");
+  const r3 = document.getElementById("review3");
+  if (r1) r1.value = weeklyReview.r1 || "";
+  if (r2) r2.value = weeklyReview.r2 || "";
+  if (r3) r3.value = weeklyReview.r3 || "";
+}
+
+function saveWeeklyReview() {
+  weeklyReview = {
+    r1: document.getElementById("review1")?.value || "",
+    r2: document.getElementById("review2")?.value || "",
+    r3: document.getElementById("review3")?.value || "",
+  };
+  save("dania_weekly_" + getWeekKeySimple(), weeklyReview);
+}
+
+// ── FATHER MOMENT ─────────────────────────────────────────────────────────────
+
+function renderFatherMoment() {
+  const el = document.getElementById("father-input");
+  if (el) el.value = fatherMoment;
+}
+
+function saveFatherMoment() {
+  const el = document.getElementById("father-input");
+  if (el) {
+    fatherMoment = el.value;
+    save("dania_father_" + todayKey(), fatherMoment);
+    const saved = document.getElementById("father-saved");
+    if (saved) { saved.style.display = "block"; setTimeout(() => saved.style.display = "none", 2000); }
+  }
+}
+
+// ── GESTURE ───────────────────────────────────────────────────────────────────
+
+const GESTURE_TYPES = [
+  { id:"gift-friend", emoji:"🎁", label:"Gift a friend" },
+  { id:"gift-family", emoji:"💝", label:"Gift family" },
+  { id:"gift-self", emoji:"👑", label:"Gift myself" },
+  { id:"visit", emoji:"🚪", label:"Visit someone" },
+];
+
+function renderGesture() {
+  const card = document.getElementById("gesture-card");
+  if (!card) return;
+  const wk = getWeekKeySimple();
+  const g = gesture;
+
+  card.innerHTML = `
+    <div class="connection-type" style="color:var(--gold);margin-bottom:10px">One beautiful gesture this week</div>
+    <p style="font-size:12px;color:var(--text-faint);font-weight:300;margin-bottom:14px;line-height:1.6;">A visit, a gift, or something kind — for someone else or for yourself.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      ${GESTURE_TYPES.map(t => `
+        <button onclick="setGestureType('${t.id}')" style="padding:10px 8px;border-radius:10px;cursor:pointer;font-family:var(--sans);font-size:11px;letter-spacing:0.05em;text-align:center;background:${g.type===t.id?"var(--gold-dim)":"var(--surface)"};border:1px solid ${g.type===t.id?"var(--gold-border)":"var(--border)"};color:${g.type===t.id?"var(--gold)":"var(--text-faint)"};transition:all 0.25s;">
+          <div style="font-size:18px;margin-bottom:4px">${t.emoji}</div>${t.label}
+        </button>`).join("")}
+    </div>
+    <input id="gesture-recipient" type="text" placeholder="For whom? Or what will you get yourself?" onblur="saveGesture()" value="${g.recipient || ""}" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--serif);font-size:13px;color:var(--text);outline:none;margin-bottom:12px;"/>
+    <button onclick="markGestureDone()" style="width:100%;padding:11px;background:${g.done?"rgba(196,163,107,0.15)":"var(--surface)"};border:1px solid ${g.done?"var(--gold-border)":"var(--border)"};border-radius:8px;font-family:var(--sans);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${g.done?"var(--gold)":"var(--text-faint)"};cursor:pointer;transition:all 0.25s;">
+      ${g.done ? "✓ Done with love" : "Mark as done"}
+    </button>`;
+}
+
+function setGestureType(type) {
+  gesture.type = gesture.type === type ? "" : type;
+  saveGesture();
+  renderGesture();
+}
+
+function saveGesture() {
+  const el = document.getElementById("gesture-recipient");
+  if (el) gesture.recipient = el.value;
+  save("dania_gesture_" + getWeekKeySimple(), gesture);
+}
+
+function markGestureDone() {
+  gesture.done = !gesture.done;
+  saveGesture();
+  renderGesture();
+}
+
+// ── LINKEDIN ──────────────────────────────────────────────────────────────────
+
+function getWeekKey() { return getWeekKeySimple(); }
+
+function renderLinkedIn() {
+  const card = document.getElementById("linkedin-card");
+  if (!card) return;
+  const wk = getWeekKey();
+  const entry = linkedin[wk] || {};
+
+  const days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+  const dayOptions = days.map(d =>
+    `<option value="${d}" ${entry.day === d ? "selected" : ""}>${d}</option>`
+  ).join("");
+
+  card.innerHTML = `
+    <div class="connection-type" style="color:rgba(10,102,194,0.8);margin-bottom:10px">This week's post</div>
+    <div style="margin-bottom:12px">
+      <p style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px;font-weight:300;">Publish day</p>
+      <select id="li-day" onchange="saveLinkedIn()" style="width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:13px;color:var(--text);outline:none;">
+        <option value="">Choose a day...</option>
+        ${dayOptions}
+      </select>
+    </div>
+    <div style="margin-bottom:12px">
+      <p style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px;font-weight:300;">Post topic or idea</p>
+      <textarea id="li-topic" onchange="saveLinkedIn()" placeholder="What will you write about this week?" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--serif);font-size:13px;color:var(--text);resize:none;height:70px;outline:none;line-height:1.6;">${entry.topic || ""}</textarea>
+    </div>
+    <button onclick="markLinkedInDone()" style="width:100%;padding:11px;background:${entry.done ? "rgba(10,102,194,0.15)" : "var(--surface)"};border:1px solid ${entry.done ? "rgba(10,102,194,0.3)" : "var(--border)"};border-radius:8px;font-family:var(--sans);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${entry.done ? "rgba(10,102,194,0.9)" : "var(--text-faint)"};cursor:pointer;transition:all 0.25s;">
+      ${entry.done ? "✓ Published this week!" : "Mark as published"}
+    </button>`;
+}
+
+function saveLinkedIn() {
+  const wk = getWeekKey();
+  const day = document.getElementById("li-day")?.value;
+  const topic = document.getElementById("li-topic")?.value;
+  linkedin[wk] = { ...linkedin[wk], day, topic };
+  save("dania_linkedin", linkedin);
+}
+
+function markLinkedInDone() {
+  const wk = getWeekKey();
+  linkedin[wk] = { ...linkedin[wk], done: !linkedin[wk]?.done };
+  save("dania_linkedin", linkedin);
+  renderLinkedIn();
+}
+
+// ── JOURNEY ───────────────────────────────────────────────────────────────────
+
+function calcStreak() {
+  let count = 0;
+  const d = new Date();
+  for (let i = 0; i < 365; i++) {
+    const key = d.toISOString().split("T")[0];
+    const entry = history[key];
+    if (entry && entry.done > 0) { count++; d.setDate(d.getDate() - 1); }
+    else if (i === 0) { d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return count;
+}
+
+function renderJourney() {
+  const streak = calcStreak();
+  const total = Object.keys(history).length;
+  const showed = Object.values(history).filter(d => d.done > 0).length;
+  const pct = total > 0 ? Math.round(showed / total * 100) : 0;
+
+  document.getElementById("streak-now").textContent = streak;
+  document.getElementById("streak-total").textContent = total;
+  document.getElementById("streak-pct").textContent = pct + "%";
+
+  // 30 day calendar
+  const grid = document.getElementById("cal-grid");
+  grid.innerHTML = "";
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split("T")[0];
+    const data = history[key];
+    const isWin = wins[key];
+    let cls = "";
+    if (data) cls = data.done === data.total ? "full-day" : data.done > 0 ? "partial" : "missed";
+    else cls = "missed";
+    const div = document.createElement("div");
+    div.className = "cal-day " + cls;
+    div.innerHTML = isWin ? `<span style="font-size:9px">⭐</span>` : d.getDate();
+    div.title = isWin ? (wins[key] + " · " + key) : key;
+    grid.appendChild(div);
+  }
+
+  // Render wins list
+  renderChain();
+  renderWinsList();
+}// ── WINS ─────────────────────────────────────────────────────────────────────
+
+let selectedSticker = "⭐";
+
+function selectSticker(s) {
+  if (s && s.trim()) selectedSticker = s.trim();
+}
+
+function saveWin() {
+  const input = document.getElementById("win-input");
+  const text = input.value.trim();
+  if (!text) return;
+  wins[todayKey()] = { sticker: selectedSticker, text };
+  save("dania_wins", wins);
+  input.value = "";
+  renderJourney();
+}
+
+function renderChain() {
+  const el = document.getElementById("chain-visual");
+  if (!el) return;
+  // Show last 30 days as chain links
+  const links = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split("T")[0];
+    const data = history[key];
+    const isToday = i === 0;
+    const done = data && data.done > 0;
+    links.push(`<div title="${key}" style="
+      width:26px;height:26px;border-radius:50%;
+      background:${done ? "var(--gold)" : isToday ? "var(--gold-dim)" : "var(--surface)"};
+      border:2px solid ${done ? "var(--gold)" : isToday ? "var(--gold-border)" : "var(--border)"};
+      display:flex;align-items:center;justify-content:center;
+      font-size:9px;color:${done ? "#0a0a0a" : "var(--text-faint)"};
+      font-weight:${done ? "500" : "300"};
+      transition:all 0.3s;
+    ">${d.getDate()}</div>`);
+  }
+  el.innerHTML = links.join("");
+}
+
+function renderWinsList() {
+  const container = document.getElementById("wins-list");
+  if (!container) return;
+  const entries = Object.entries(wins).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 10);
+  if (!entries.length) { container.innerHTML = ""; return; }
+  container.innerHTML = `<p class="section-label" style="margin-bottom:10px">Your exceptional moments</p>` +
+    entries.map(([key, val]) => {
+      const d = new Date(key);
+      const label = d.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" });
+      return `<div class="win-entry">
+        <div class="win-sticker">${val.sticker || "⭐"}</div>
+        <div>
+          <div class="win-text">${val.text}</div>
+          <div class="win-date">${label}</div>
+        </div>
+      </div>`;
+    }).join("");
+}
+
+// ── IDENTITY ──────────────────────────────────────────────────────────────────
+
+const STRENGTHS = [
+  "Strategic intelligence", "High agency", "Spiritual depth",
+  "Visionary thinking", "Emotional depth", "Resilience",
+  "Purpose orientation", "Written expression", "Systems thinking",
+  "Beauty in ordinary moments", "Responsibility tolerance", "Identity clarity",
+];
+
+const REMINDERS = [
+  "I am the most precious creature on this earth.",
+  "I was born a Pioneer. I became a Builder. I am the Illuminator.",
+  "I am a Sagittarian Water Rooster, Master Number 11.\nI did not choose Rumi. He was always close to me.",
+  "Start before you are ready. God will help.",
+  "The wound is where the light enters. And I have light.",
+  "I carry my father's name — Kawa, the liberator — inside mine.",
+];
+
+function renderIdentity() {
+  const tags = document.getElementById("strengths-tags");
+  if (tags && !tags.children.length) {
+    tags.innerHTML = STRENGTHS.map(s => `<div class="tag">${s}</div>`).join("");
+  }
+}
+
+function showReminder() {
+  const msg = document.getElementById("reminder-msg");
+  const ri = Math.floor(Math.random() * REMINDERS.length);
+  msg.textContent = "\u201c" + REMINDERS[ri] + "\u201d";
+  msg.style.display = "block";
+  msg.style.animation = "none"; msg.offsetHeight; msg.style.animation = "";
+}
+</script>
+</body>
+</html>
